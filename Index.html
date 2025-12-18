@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <title>Sistema Pedidos 3D - Miniaturas RPG</title>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .card { box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: none; }
+        .btn-add { background: #28a745; border: none; }
+        .btn-add:hover { background: #218838; }
+        .modal-header { background: linear-gradient(45deg, #28a745, #20c997); color: white; }
+    </style>
+</head>
+<body class="p-4">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10 col-lg-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h3>🖼️ Sistema de Pedidos - Miniaturas 3D RPG</h3>
+                    </div>
+                    
+                    <div class="card-body">
+                        <h5 class="text-primary mb-3">📋 Pedidos Anteriores</h5>
+                        <div id="listaPedidos" class="mb-4"></div>
+                        
+                        <h5 class="text-success mb-3">➕ Novo Pedido</h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">👤 Cliente</label>
+                                <input type="text" id="cliente" class="form-control" placeholder="Nome do cliente">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">📱 Telefone/WhatsApp</label>
+                                <input type="text" id="telefone" class="form-control" placeholder="(11) 99999-9999">
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0" id="headerItens">📦 Itens do Pedido (0 itens)</h6>
+                                <button type="button" class="btn btn-success btn-sm btn-add" data-bs-toggle="modal" data-bs-target="#modalItem">
+                                    ➕ Adicionar Item
+                                </button>
+                            </div>
+                            <div class="card-body p-0">
+                                <table class="table table-hover mb-0" id="tabelaItens">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th width="40%">Descrição</th>
+                                            <th width="15%">Qtd</th>
+                                            <th width="20%">Valor Unit (R$)</th>
+                                            <th width="15%">Total</th>
+                                            <th width="10%">Ação</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">💰 Total Geral: R$ <span id="totalGeral" class="text-success fs-4">0,00</span></label>
+                                <small class="text-muted" id="qtdItens">0 itens</small>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <span id="contadorItens" class="badge bg-info fs-6 me-2">0 itens</span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">💳 Forma de Pagamento</label>
+                                <select id="pagto" class="form-select">
+                                    <option>Pix à vista</option>
+                                    <option>Cartão (parcelado)</option>
+                                    <option>Boleto</option>
+                                    <option>Dinheiro</option>
+                                    <option>Outros</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="button" class="btn btn-success btn-lg me-3" onclick="salvarComoTXT()">
+                                💾 Salvar Pedido (TXT)
+                            </button>
+                            <button type="button" class="btn btn-primary btn-lg me-3" onclick="gerarPDF()">
+                                📄 Gerar PDF WhatsApp
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-lg" onclick="limparFormulario()">
+                                🗑️ Novo Pedido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL Adicionar Item - CORRIGIDO -->
+    <div class="modal fade" id="modalItem" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">➕ Adicionar Novo Item</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold">📝 Descrição</label>
+                            <input type="text" id="itemDesc" class="form-control" placeholder="Miniatura Dragão Verde">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">📏 Categoria</label>
+                            <select id="itemCategoria" class="form-select">
+                                <option>Miniatura RPG</option>
+                                <option>Personagem Custom</option>
+                                <option>Terreno</option>
+                                <option>Outros</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">🔢 Quantidade</label>
+                            <input type="number" id="itemQtde" class="form-control text-center" value="1" min="1">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">💰 Valor Unit (R$)</label>
+                            <input type="number" id="itemValor" class="form-control text-end" step="0.01" value="50.00">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">📐 Escala</label>
+                            <select id="itemEscala" class="form-select">
+                                <option>28mm (RPG)</option>
+                                <option>32mm</option>
+                                <option>54mm</option>
+                                <option>75mm</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <label class="form-label">📋 Observações</label>
+                            <textarea id="itemObs" class="form-control" rows="2" placeholder="Pintura personalizada..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="adicionarItemModal()">✅ Adicionar Item</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let idSeq = parseInt(localStorage.getItem('idSeq')) || 1;
+        let itensAtuais = [];
+
+        function adicionarItemModal() {
+            const desc = document.getElementById('itemDesc').value.trim();
+            if (!desc) { alert('❌ Preencha a descrição!'); return; }
+
+            const novoItem = {
+                desc: desc,
+                categoria: document.getElementById('itemCategoria').value,
+                qtde: document.getElementById('itemQtde').value,
+                valor: document.getElementById('itemValor').value,
+                escala: document.getElementById('itemEscala').value,
+                obs: document.getElementById('itemObs').value,
+                total_item: (parseFloat(document.getElementById('itemQtde').value) * parseFloat(document.getElementById('itemValor').value)).toFixed(2)
+            };
+
+            itensAtuais.push(novoItem);
+            
+            const tbody = document.querySelector('#tabelaItens tbody');
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td>
+                    <div class="fw-bold">${novoItem.desc}</div>
+                    <small class="text-muted">${novoItem.categoria} | ${novoItem.escala}</small>
+                    ${novoItem.obs ? `<br><small class="text-muted">Obs: ${novoItem.obs}</small>` : ''}
+                </td>
+                <td class="text-center fw-bold fs-5">${novoItem.qtde}</td>
+                <td class="text-end fw-bold">R$ ${parseFloat(novoItem.valor).toFixed(2)}</td>
+                <td class="total text-end fw-bold text-success fs-5">R$ ${novoItem.total_item}</td>
+                <td><button class="btn btn-danger btn-sm" onclick="removerItem(this)">🗑️</button></td>
+            `;
+
+            atualizarContador();
+            calc();
+            limparModal();
+        }
+
+        function atualizarContador() {
+            document.getElementById('contadorItens').textContent = `${itensAtuais.length} itens`;
+            document.getElementById('headerItens').textContent = `📦 Itens do Pedido (${itensAtuais.length} itens)`;
+            document.getElementById('qtdItens').textContent = `${itensAtuais.length} itens`;
+        }
+
+        function calc() {
+            const total = itensAtuais.reduce((s, i) => s + parseFloat(i.total_item), 0);
+            document.getElementById('totalGeral').textContent = total.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+        }
+
+        function removerItem(btn) {
+            btn.closest('tr').remove();
+            const index = Array.from(btn.closest('tbody').children).indexOf(btn.closest('tr'));
+            itensAtuais.splice(index, 1);
+            atualizarContador(); 
+            calc();
+        }
+
+        function limparFormulario() {
+            document.getElementById('cliente').value = '';
+            document.getElementById('telefone').value = '';
+            document.getElementById('pagto').value = 'Pix à vista';
+            document.querySelector('#tabelaItens tbody').innerHTML = '';
+            itensAtuais = []; 
+            atualizarContador(); 
+            calc();
+        }
+
+        function limparModal() {
+            document.getElementById('itemDesc').value = '';
+            document.getElementById('itemQtde').value = '1';
+            document.getElementById('itemValor').value = '50.00';
+            document.getElementById('itemObs').value = '';
+            bootstrap.Modal.getInstance(document.getElementById('modalItem')).hide();
+        }
+
+        function salvarComoTXT() {
+            if (!document.getElementById('cliente').value.trim() || itensAtuais.length === 0) {
+                alert('❌ Preencha cliente e adicione itens!');
+                return;
+            }
+            
+            const id = String(idSeq++).padStart(3, '0');
+            const nome = document.getElementById('cliente').value.trim().replace(/[^a-zA-Z0-9\s]/g, '_').toLowerCase().replace(/\s+/g, '_');
+            const filename = `${id}_${nome}.txt`;
+            
+            const total = itensAtuais.reduce((s, i) => s + parseFloat(i.total_item), 0);
+            
+            let txt = `=== PEDIDO #${id} ===\n`;
+            txt += `Cliente: ${document.getElementById('cliente').value}\n`;
+            txt += `WhatsApp: ${document.getElementById('telefone').value}\n`;
+            txt += `Data: ${new Date().toLocaleString('pt-BR')}\n`;
+            txt += `Forma Pagto: ${document.getElementById('pagto').value}\n\n`;
+            txt += `ITENS:\n${'='.repeat(50)}\n\n`;
+            
+            itensAtuais.forEach((i, idx) => {
+                txt += `${idx+1}. ${i.desc}\n`;
+                txt += `   Qtd: ${i.qtde} | R$ ${parseFloat(i.valor).toFixed(2)}\n`;
+                txt += `   Total: R$ ${i.total_item}\n`;
+                txt += `   ${i.escala} | ${i.categoria}\n`;
+                if (i.obs) txt += `   Obs: ${i.obs}\n`;
+                txt += '\n';
+            });
+            
+            txt += `${'='.repeat(50)}\n`;
+            txt += `TOTAL GERAL: R$ ${total.toFixed(2).replace('.', ',')}\n`;
+            txt += `================ FIM PEDIDO #${id} ================`;
+            
+            const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            a.click();
+            
+            localStorage.setItem('idSeq', idSeq);
+            limparFormulario();
+            alert(`✅ SALVO em DOWNLOADS!\n📁 ${filename}\n💡 Copie para D:\\SDCard\\Theras\\pedidos\\`);
+        }
+
+        function gerarPDF() {
+            alert('PDF em desenvolvimento... Use TXT por enquanto!');
+        }
+
+        function listarPedidos() {
+            document.getElementById('listaPedidos').innerHTML = '<div class="alert alert-info">Salve pedidos para ver histórico</div>';
+        }
+
+        // Inicialização
+        listarPedidos();
+        atualizarContador();
+    </script>
+</body>
+</html>
